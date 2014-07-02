@@ -378,10 +378,26 @@ module.exports = function(passport) {
             // asynchronous
             process.nextTick(function() {
 
-                // console.log(profile);
-                // console.log(profile.id);
-                // console.log(profile.displayName);
-                // console.log(profile.emails[0].value);
+                var GitHubApi = require("github");
+                var github = new GitHubApi({
+                    version: "3.0.0",
+                    debug: true,
+                });
+                github.authenticate({
+                    type: "oauth",
+                    key: configAuth.githubAuth.clientID,
+                    secret: configAuth.githubAuth.clientSecret
+                })
+                // print all followers of user
+                github.user.getFollowingFromUser({
+                    user: "vincenttian"
+                }, function(err, res) {
+                    if (err) {
+                        console.log(err);
+                        return;
+                    }
+                    console.log(res);
+                });
 
                 // check if the user is already logged in
                 if (!req.user) {

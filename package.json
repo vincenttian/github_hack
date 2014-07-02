@@ -9,6 +9,7 @@
     "ejs": "~0.8.5",
     "express": "~4.0.0",
     "express-session": "~1.0.0",
+    "github": "^0.2.0",
     "method-override": "~1.0.0",
     "mongodb": "latest",
     "mongoose": "~3.8.1",

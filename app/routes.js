@@ -101,9 +101,7 @@ module.exports = function(app, passport) {
     // github ---------------------------------
 
     // send to google to do the authentication
-    app.get('/auth/github', passport.authenticate('github'), function(req, res) {
-        // never gets here
-    });
+    app.get('/auth/github', passport.authenticate('github'));
 
     // the callback after github has authenticated the user
     app.get('/auth/github/callback',
