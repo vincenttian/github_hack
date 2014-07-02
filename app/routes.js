@@ -98,6 +98,21 @@ module.exports = function(app, passport) {
             failureRedirect: '/'
         }));
 
+    // github ---------------------------------
+
+    // send to google to do the authentication
+    app.get('/auth/github', passport.authenticate('github'), function(req, res) {
+        // never gets here
+    });
+
+    // the callback after github has authenticated the user
+    app.get('/auth/github/callback',
+        passport.authenticate('github', {
+            failureRedirect: '/'
+        }), function(req, res) {
+            res.redirect('/profile');
+        });
+
     // =============================================================================
     // AUTHORIZE (ALREADY LOGGED IN / CONNECTING OTHER SOCIAL ACCOUNT) =============
     // =============================================================================
@@ -157,6 +172,19 @@ module.exports = function(app, passport) {
             failureRedirect: '/'
         }));
 
+    // github ---------------------------------
+
+    // send to google to do the authentication
+    app.get('/connect/github', passport.authorize('github'));
+
+    // the callback after google has authorized the user
+    app.get('/connect/github/callback',
+        passport.authorize('github', {
+            failureRedirect: '/'
+        }), function(req, res) {
+            res.redirect('/profile');
+        });
+
     // =============================================================================
     // UNLINK ACCOUNTS =============================================================
     // =============================================================================
@@ -196,6 +224,15 @@ module.exports = function(app, passport) {
     app.get('/unlink/google', function(req, res) {
         var user = req.user;
         user.google.token = undefined;
+        user.save(function(err) {
+            res.redirect('/profile');
+        });
+    });
+
+    // github ---------------------------------
+    app.get('/unlink/github', function(req, res) {
+        var user = req.user;
+        user.github.token = undefined;
         user.save(function(err) {
             res.redirect('/profile');
         });
