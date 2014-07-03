@@ -4,6 +4,7 @@ var FacebookStrategy = require('passport-facebook').Strategy;
 var TwitterStrategy = require('passport-twitter').Strategy;
 var GoogleStrategy = require('passport-google-oauth').OAuth2Strategy;
 var GitHubStrategy = require('passport-github').Strategy;
+var async = require('async');
 
 // load up the user model
 var User = require('../app/models/user');
@@ -386,70 +387,178 @@ module.exports = function(passport) {
                 github.authenticate({
                     type: "oauth",
                     key: configAuth.githubAuth.clientID,
-                    secret: configAuth.githubAuth.clientSecret
-                })
-                // print all followers of user
-                github.user.getFollowingFromUser({
-                    user: "vincenttian"
-                }, function(err, res) {
-                    if (err) {
-                        console.log(err);
-                        return;
-                    }
-                    console.log(res);
+                    secret: configAuth.githubAuth.clientSecret,
+                    token: accessToken
                 });
 
-                // check if the user is already logged in
-                if (!req.user) {
-                    User.findOne({
-                        'github.id': profile.id
-                    }, function(err, user) {
-                        if (err)
-                            return done(err);
-                        if (user) {
-                            // if there is a user id already but no token (user was linked at one point and then removed)
-                            if (!user.github.token) {
-                                user.github.token = accessToken;
-                                user.github.name = profile.displayName;
-                                user.github.email = (profile.emails[0].value || '').toLowerCase(); // pull the first email
-                                user.save(function(err) {
-                                    if (err)
-                                        throw err;
+                async.series([
+
+                        function(callback) {
+                            // print all followers of user
+                            github.user.getFollowingFromUser({
+                                user: "vincenttian"
+                            }, function(err, res) {
+                                if (err) {
+                                    console.log(err);
+                                    return;
+                                }
+                                console.log('passed1');
+                                callback(null, res);
+                            });
+                        },
+                        // function(callback) {
+                        //     github.authorization.getAll({
+                        //         user: "vincenttian"
+                        //     }, function(err, res) {
+                        //         if (err) {
+                        //             console.log(err);
+                        //             return;
+                        //         }
+                        //         callback(null, res);
+                        //     })
+                        //     // callback(null, 'one');
+                        // },
+                        // function(callback) {
+                        //     github.orgs.getFromUser({
+                        //         user: "vincenttian"
+                        //     }, function(err, res) {
+                        //         if (err) {
+                        //             console.log(err);
+                        //             return;
+                        //         }
+                        //         callback(null, res);
+                        //     })
+                        //     // callback(null, 'one');
+                        // },
+                        // function(callback) {
+                        //     github.repos.getStarredFromUser({
+                        //         user: "vincenttian"
+                        //     }, function(err, res) {
+                        //         if (err) {
+                        //             console.log(err);
+                        //             return;
+                        //         }
+                        //         callback(null, res);
+                        //     })
+                        //     // callback(null, 'one');
+                        // },
+                        // function(callback) {
+                        //     github.repos.getWatchedFromUser({
+                        //         user: "vincenttian"
+                        //     }, function(err, res) {
+                        //         if (err) {
+                        //             console.log(err);
+                        //             return;
+                        //         }
+                        //         callback(null, res);
+                        //     })
+                        //     // callback(null, 'one');
+                        // },
+                        // function(callback) {
+                        //     github.repos.getFromUser({
+                        //         user: "vincenttian"
+                        //     }, function(err, res) {
+                        //         if (err) {
+                        //             console.log(err);
+                        //             return;
+                        //         }
+                        //         callback(null, res);
+                        //     })
+                        //     // callback(null, 'one');
+                        // },
+
+                        function(callback) {
+                            github.user.getFollowUser({
+                                user: "vincenttian"
+                            }, function(err, res) {
+                                if (err) {
+                                    console.log(err);
+                                    return;
+                                }
+                                console.log('passed2');
+                                callback(null, res);
+                            })
+                            // callback(null, 'one');
+                        }
+                        // , function(callback) {
+                        //     github.user.getOrgs(function(err, res) {
+                        //         if (err) {
+                        //             console.log(err);
+                        //             return;
+                        //         }
+                        //         console.log('passed3');
+                        //         callback(null, res);
+                        //     })
+                        //     // callback(null, 'one');
+                        // },
+                        // function(callback) {
+                        //     github.user.getTeams({
+                        //         user: "vincenttian"
+                        //     }, function(err, res) {
+                        //         if (err) {
+                        //             console.log(err);
+                        //             return;
+                        //         }
+                        //         console.log('passed4');
+                        //         callback(null, res);
+                        //     })
+                        //     // callback(null, 'one');
+                        // }
+                    ],
+                    function(err, results) {
+                        // console.log(results[0]);
+                        console.log(github);
+                        // check if the user is already logged in
+
+                        if (!req.user) {
+                            User.findOne({
+                                'github.id': profile.id
+                            }, function(err, user) {
+                                if (err)
+                                    return done(err);
+                                if (user) {
+                                    // if there is a user id already but no token (user was linked at one point and then removed)
+                                    if (!user.github.token) {
+                                        user.github.token = accessToken;
+                                        user.github.name = profile.displayName;
+                                        user.github.email = (profile.emails[0].value || '').toLowerCase(); // pull the first email
+                                        user.save(function(err) {
+                                            if (err)
+                                                throw err;
+                                            return done(null, user);
+                                        });
+                                    }
                                     return done(null, user);
-                                });
-                            }
-                            return done(null, user);
+                                } else {
+                                    var newUser = new User();
+                                    newUser.github.id = profile.id;
+                                    newUser.github.token = accessToken;
+                                    newUser.github.name = profile.displayName;
+                                    newUser.github.email = (profile.emails[0].value || '').toLowerCase(); // pull the first email
+                                    newUser.save(function(err) {
+                                        if (err)
+                                            throw err;
+                                        return done(null, newUser);
+                                    });
+                                }
+                            });
+
                         } else {
-                            var newUser = new User();
-                            newUser.github.id = profile.id;
-                            newUser.github.token = accessToken;
-                            newUser.github.name = profile.displayName;
-                            newUser.github.email = (profile.emails[0].value || '').toLowerCase(); // pull the first email
-                            newUser.save(function(err) {
+                            // user already exists and is logged in, we have to link accounts
+                            var user = req.user; // pull the user out of the session
+                            user.github.id = profile.id;
+                            user.github.token = accessToken;
+                            user.github.name = profile.displayName;
+                            user.github.email = (profile.emails[0].value || '').toLowerCase(); // pull the first email
+                            user.save(function(err) {
                                 if (err)
                                     throw err;
-                                return done(null, newUser);
+                                return done(null, user);
                             });
+
                         }
                     });
-
-                } else {
-                    // user already exists and is logged in, we have to link accounts
-                    var user = req.user; // pull the user out of the session
-                    user.github.id = profile.id;
-                    user.github.token = accessToken;
-                    user.github.name = profile.displayName;
-                    user.github.email = (profile.emails[0].value || '').toLowerCase(); // pull the first email
-                    user.save(function(err) {
-                        if (err)
-                            throw err;
-                        return done(null, user);
-                    });
-
-                }
-
             });
-
         }));
 
 };

@@ -10,9 +10,13 @@ https://github.com/jaredhanson/passport-github/
 
 Github API:
 https://github.com/mikedeboer/node-github/
+Good docs can be found at:
+http://mikedeboer.github.io/node-github/
 
 Mongoose Docs:
 http://mongoosejs.com/docs/
+
+Async Library:
 
 
 ###MongoDB
